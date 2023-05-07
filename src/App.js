@@ -1,85 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { useJwt } from 'react-jwt';
+import React, { useState, useMemo } from 'react';
 
-function App() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState(null);
-  const [loggedIn, setLoggedIn] = useState(false);
+const MemoizationApp = () => {
+  const [count, setCount] = useState(0);
+  const [text, setText] = useState('');
 
-  const { decodedToken, isExpired } = useJwt();
-
-  useEffect(() => {
-    if (decodedToken && !isExpired) {
-      setLoggedIn(true);
+  // Expensive computation using count and text values
+  const expensiveComputation = (count, text) => {
+    console.log('Running expensive computation...');
+    let result = '';
+    for (let i = 0; i < count; i++) {
+      result += text + ' ';
     }
-  }, [decodedToken, isExpired]);
-
-  const handleLogin = async (event) => {
-    event.preventDefault();
-    setLoginError(null);
-
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
-
-      const { token } = await response.json();
-      localStorage.setItem('jwtToken', token);
-      setLoggedIn(true);
-    } catch (error) {
-      setLoginError(error.message);
-    }
+    return result;
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('jwtToken');
-    setLoggedIn(false);
-  };
-
-  if (!loggedIn) {
-    return (
-      <div>
-        <h1>Login</h1>
-        {loginError && <p>{loginError}</p>}
-        <form onSubmit={handleLogin}>
-          <div>
-            <label htmlFor="username">Username:</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="password">Password:</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </div>
-          <button type="submit">Login</button>
-        </form>
-      </div>
-    );
-  }
+  // Memoized result of expensive computation
+  const memoizedResult = useMemo(() => expensiveComputation(count, text), [
+    count,
+    text,
+  ]);
 
   return (
     <div>
-      <h1>Welcome, {decodedToken.username}!</h1>
-      <p>Your session expires at {new Date(decodedToken.exp * 1000).toLocaleString()}.</p>
-      <button onClick={handleLogout}>Logout</button>
+      <h2>Count: {count}</h2>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+
+      <h2>Text: {text}</h2>
+      <input type="text" value={text} onChange={(e) => setText(e.target.value)} />
+
+      <h2>Memoized Result:</h2>
+      <p>{memoizedResult}</p>
     </div>
   );
-}
+};
 
-export default App;
+export default MemoizationApp;
